@@ -1,0 +1,93 @@
+---
+title: "Milestone Report - Capstone Project"
+author: "M Poobalan"
+date: "March 18, 2016"
+output:
+  html_document:
+    highlight: tango
+    toc: yes
+    toc_depth: 3
+---
+#Introduction
+
+This document presents the analysis of datasets for text prediction models, and provide the roadmap for the proposed text prediction models.
+
+
+Data for this project is obtained from SwiftKey (see Reference below for link) and contains 3 types of textual data - from **Twitter**, **blogs** and **news**, each available in four languages. For the purpose of this project, data for **English** language is used.
+
+eval to run or not
+echo to display code or not
+results to hide or show code results
+message
+warning 
+cache for caching
+
+
+
+#Loading Data
+```{r loading, cache=TRUE, warning=FALSE}
+datatwitter <-readLines(conn <-file("./data/en_US.twitter.txt",encoding="UTF-8"))
+close(conn)
+datablog <- readLines(conn <-file("./data/en_US.blogs.txt",encoding="UTF-8"))
+close(conn)
+datanews <- readLines(conn <-file("./data/en_US.news.txt","rb",encoding="UTF-8"))
+close(conn)
+```
+
+
+
+#Data Exploration
+The file size, object size (in memory) and number of lines in each dataset is quite big as shown below:
+
+```{r basicinfo, warning=FALSE, echo=FALSE, results='hide'}
+#calc file size
+file.info("./data/en_US.twitter.txt")$size/1024/1000
+file.info("./data/en_US.blogs.txt")$size/1024/1000
+file.info("./data/en_US.news.txt")$size/1024/1000
+
+twtinfo <- c(format(file.info("./data/en_US.twitter.txt")$size/1024/1000,digits=6),format(object.size(datatwitter),units="auto"),prettyNum(length(datatwitter),big.mark = ",",width=7))
+bloginfo <- c(format(file.info("./data/en_US.blogs.txt")$size/1024/1000,digits=6),format(object.size(datablog),units="auto"),prettyNum(length(datablog),big.mark = ",",width=8))
+newsinfo <- c(format(file.info("./data/en_US.news.txt")$size/1024/1000,digits=6),format(object.size(datanews),units="auto"),prettyNum(length(datanews),big.mark = ",",width=7))
+
+datainfo <- rbind(twtinfo, bloginfo,newsinfo)
+
+rownames(datainfo) <- c("Twitter", "Blogs", "News")
+colnames(datainfo) <- c("File Size (MB)", "Object Size", "Lines")
+```
+
+```{r showinfo}
+library(knitr)
+
+knitr::kable(datainfo)
+```
+
+
+#Cleaning Data
+
+
+#Creating Sample
+
+#Creating Corpus
+
+#n-gram
+
+#Way Forward
+
+#References
+
+1. Data source from SwiftKey - [download zip file](<https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip)
+2. Dataset Corpus (HC Corpora) - [Read me file](http://www.corpora.heliohost.org/aboutcorpus.html)
+3. Blacklisted words
+4. 
+
+```{r}
+summary(cars)
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
