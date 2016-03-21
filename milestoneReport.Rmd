@@ -19,14 +19,6 @@ Data for this project is obtained from SwiftKey (see Reference below for link) a
 For simplicity, most of the codes used to generate this documents will be not be displayed. However, it can be accessed at [Github](https://github.com/libra22/M10-Capstone) for verification purposes.
 
 
-eval to run or not
-echo to display code or not
-results to hide or show code results
-message
-warning 
-cache for caching
-
-
 #Data Loading
 ```{r loading, cache=TRUE, warning=FALSE}
 datatwitter <-readLines(conn <-file("./data/en_US.twitter.txt",encoding="UTF-8"))
@@ -45,7 +37,7 @@ When combined, the total lines are over 4 million with more than 102 million wor
 
 Due to large data size and computational limitation, the number of unique words could not be obtained for the full dataset. However, it will be calculated for the sample dataset later.
 
-```{r basicinfo, warning=FALSE, echo=FALSE, results='hide'}
+```{r basicinfo, warning=FALSE, echo=FALSE, results='hide', cache=TRUE}
 
 library(stringi)
 
@@ -89,7 +81,7 @@ colnames(datainfo) <- c("File Size (MB)", "Object Size", "Lines","Number of Word
 library(knitr)
 ```
 
-```{r showinfo, echo=FALSE}
+```{r showinfo, echo=FALSE, cache=TRUE}
 knitr::kable(datainfo)
 ```
 
@@ -180,7 +172,7 @@ Wordcloud of the individual sample datasets and combined sample datasets is crea
 
 
 ###Wordcloud for Tweet sample dataset
-```{r wctwtsample, echo=FALSE, warning=FALSE}
+```{r wctwtsample, echo=FALSE, warning=FALSE, message=FALSE}
 library(wordcloud)
 wordcloud(sampletwt,max.words = 50, random.color = TRUE, random.order = FALSE, colors = brewer.pal(12,"Set3"))
 ```
@@ -241,6 +233,8 @@ No stemming (defined as reducing words to their root words or singularity, e.g. 
 
 ##Dictionary
 The list of profanities is retrieved from a github repository (listed in Reference).
+
+
 ```{r profanitylist, echo=FALSE,cache=TRUE, results='hide'}
 library(RCurl)
 
@@ -257,6 +251,9 @@ rm(url,datablog,datanews,datatwitter,sampleblog,samplenews,sampletwt)
 ```
 
 
+The commands to clean the corpus is as below:
+
+
 ```{r cleaningcorpus, results='hide'}
 allsample.corpus <- tm_map(allsample.corpus, content_transformer(tolower))
 allsample.corpus <- tm_map(allsample.corpus,removePunctuation)
@@ -271,7 +268,10 @@ allsample.corpus <- tm_map(allsample.corpus,PlainTextDocument)
 Once some cleaning and processing is done on the corpus, we proceed to create a **term-document matrix (TDM)**, which is basically a matrix (or table) that maps the occurence of the text (arranged as rows) against the number of documents (arranged as columns). Documents here will refer to each line of the dataset (i.e. a line may be a tweet, a blog article or a news article). The occurence of the term is calculated by how many **previous** words we want to consider in order to predict the next word. This is known as **n-gram tokenization**, whereby "n" can be 1, 2, 3 and so on. An n-gram is a contiguous sequence of n items from a given sequence of text or speech (the corpus). A single word gram is known as an **unigram**. A unigram TDM entry can be occurence of the word "book" in all the documents. A two word gram is known as **bigram**. a bigram TDM entry can be probability occurence of the term "read book" in the documents. A three word gram is a **trigram**. Example would be "to read book" term probability occurence in documents. And so on for fourgram, fivegram and other grams. 
 
 
-For the purpose of this project, we look at up to fivegram MTDs and also have a backoff model. 
+For the purpose of this project, we look at up to fivegram TDMs. 
+
+
+Commands to set token:
 
 ```{r tokenization, results='hide'}
 library(RWeka)
@@ -281,6 +281,9 @@ tri_token <- function(x) NGramTokenizer(x, Weka_control(min = 3, max = 3))
 four_token <- function(x) NGramTokenizer(x, Weka_control(min = 4, max = 4))
 five_token <- function(x) NGramTokenizer(x, Weka_control(min = 5, max = 5))
 ```
+
+
+Creation of TermDocumentMatrix:
 
 ```{r ngrams}
 tdm1 <- TermDocumentMatrix(allsample.corpus, control=list(tokenize=u_token))
@@ -300,14 +303,16 @@ It is possible than many of the entries in TDMs consist of zero or ones, meaning
 
 The reason for sparsing and filtering is also due to memory limitation of the computer, whereby converting the raw TDMs to matrix generates very large object sizes. By sparsing or filtering, the size is reduced for plotting purposes.
 
-```{r sparsity, results='hide', warning=FALSE}
+```{r inspect, results='hide', eval=FALSE, warning=FALSE}
 #check sparsity
 #inspect(tdm1)
 #inspect(tdm2)
 #inspect(tdm3)
 #inspect(tdm4)
 #inspect(tdm5)
+```
 
+```{r sparsity, results='hide', warning=FALSE}
 #remove sparse terms
 tdm1a <- removeSparseTerms(tdm1,0.99)
 tdm2a <- removeSparseTerms(tdm2,0.99)
@@ -336,6 +341,9 @@ tdm5matrix <- as.matrix(tdm5[tdm5a,])
 tdm5freq <- sort(rowSums(tdm5matrix), decreasing = TRUE)
 tdm5df <- data.frame(term=names(tdm5freq), frequency=tdm5freq)
 
+```
+
+``` {r cleanmemory6, results='hide'}
 #clean memory
 rm(tdm1a,tdm1freq,tdm1matrix,tdm2a,tdm2freq,tdm2matrix,tdm3a,tdm3freq,tdm3matrix,tdm4a,tdm4freq,tdm4matrix,tdm5a,tdm5freq,tdm5matrix)
 rm(tdm1,tdm2,tdm3,tdm4,tdm5)
@@ -345,20 +353,50 @@ rm(tdm1,tdm2,tdm3,tdm4,tdm5)
 #Words Frequency Visualization
 Wordcloud plots are created to show the top 50 terms for each of the TDM and also compared with top 50 terms for the corpus.
 
-##Wordcloud
-```{r wordcloudtdm, echo="FALSE", warning=FALSE}
+
+###Wordcloud for unigram
+```{r wordcloudtdm1, echo="FALSE", warning=FALSE}
 wordcloud(tdm1df$term,tdm1df$frequency,min.freq=200,max.words = 50, random.color = TRUE, random.order = FALSE, colors = brewer.pal(12,"Set3"))
+```
+
+
+###Wordcloud for bigram
+```{r wordcloudtdm2, echo="FALSE", warning=FALSE}
 wordcloud(tdm2df$term,tdm2df$frequency,min.freq=200,max.words = 50, random.color = TRUE, random.order = FALSE, colors = brewer.pal(12,"Set3"))
+```
+
+
+###Wordcloud for trigram
+```{r wordcloudtdm3, echo="FALSE", warning=FALSE}
+
 wordcloud(tdm3df$term,tdm3df$frequency,max.words = 50, random.color = TRUE, random.order = FALSE, colors = brewer.pal(12,"Set3"))
+```
+
+
+###Wordcloud for fourgram
+```{r wordcloudtdm4, echo="FALSE", warning=FALSE}
+
 wordcloud(tdm4df$term,tdm4df$frequency,max.words = 50, random.color = TRUE, random.order = FALSE, colors = brewer.pal(12,"Set3"))
+```
+
+
+###Wordcloud for fivegram
+```{r wordcloudtdm5, echo="FALSE", warning=FALSE}
+
 wordcloud(tdm5df$term,tdm5df$frequency,max.words = 50, random.color = TRUE, random.order = FALSE, colors = brewer.pal(12,"Set3"))
+```
+
+
+###Wordcloud for Corpus
+```{r wordcloudcorpus, echo="FALSE", warning=FALSE}
+
 wordcloud(allsample.corpus,max.words = 50, random.color = TRUE, random.order = FALSE, colors = brewer.pal(12,"Set3"))
 ```
 
 ##Histogram
-The graphs below display top 30 terms for each of the TDMs.
+We further explore using histograms to see the trend of the word/term occurences. The graphs below display top 30 terms for each of the TDMs.
 
-```{r plotg1, fig.align='center'}
+```{r plotg1, fig.align='center', message=FALSE}
 library(ggplot2)
 g1 <- ggplot(head(tdm1df,30), aes(x=reorder(term, frequency), y=frequency, fill=frequency)) +
   geom_bar(stat = "identity") +  coord_flip() +  theme_gray() + 
@@ -368,29 +406,36 @@ g1 <- ggplot(head(tdm1df,30), aes(x=reorder(term, frequency), y=frequency, fill=
 print(g1)
 ```
 
+For unigram plot above, as expected, common English words dominate the list. This is due to not cleaning the corpus using the stopwords.
 
-```{r plots}
+```{r plotg2, fig.align='center', message=FALSE}
 g2 <- ggplot(head(tdm2df,30), aes(x=reorder(term, frequency), y=frequency, fill=frequency)) +
   geom_bar(stat = "identity") +  coord_flip() +  theme_gray() + 
   theme(legend.title=element_blank()) +
   xlab("Bigram") + ylab("Frequency") +
   labs(title = "Top 30 Bigrams by Frequency")
 print(g2)
+```
 
+```{r plotg3, fig.align='center', message=FALSE}
 g3 <- ggplot(head(tdm3df,30), aes(x=reorder(term, frequency), y=frequency, fill=frequency)) +
   geom_bar(stat = "identity") +  coord_flip() + theme_gray() + 
   theme(legend.title=element_blank()) +
   xlab("Trigram") + ylab("Frequency") + 
   labs(title = "Top 30 Trigrams by Frequency")
 print(g3)
+```
 
+```{r plotg4, fig.align='center', message=FALSE}
 g4 <- ggplot(head(tdm4df,30), aes(x=reorder(term, frequency), y=frequency, fill=frequency)) +
   geom_bar(stat = "identity") +  coord_flip() + theme_gray() +
   theme(legend.title=element_blank()) +
   xlab("Fourgram") + ylab("Frequency") +
   labs(title = "Top 30 Fourgrams by Frequency")
 print(g4)
+```
 
+```{r plotg5, fig.align='center', message=FALSE}
 g5 <- ggplot(head(tdm5df,30), aes(x=reorder(term, frequency), y=frequency, fill=frequency)) +
   geom_bar(stat = "identity") +  coord_flip() +  theme_gray() + 
   theme(legend.title=element_blank()) +
